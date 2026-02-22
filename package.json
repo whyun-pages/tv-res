@@ -1,0 +1,13 @@
+{
+  "name": "tv-res",
+  "version": "1.0.0",
+  "description": "TV Resolution Logo",
+  "main": "index.js",
+  "scripts": {
+    "build": "node build-logo-json.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "packageManager": "pnpm@10.13.1"
+}

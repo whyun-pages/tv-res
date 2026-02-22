@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>电视台标 Logo 展示</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      margin: 0;
+      padding: 24px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      padding: 24px;
+    }
+    h1 {
+      margin: 0 0 20px;
+      font-size: 1.5rem;
+      color: #333;
+    }
+    .search-wrap {
+      margin-bottom: 20px;
+    }
+    .search-wrap label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+      color: #555;
+    }
+    .search-input {
+      width: 100%;
+      max-width: 320px;
+      padding: 10px 14px;
+      font-size: 14px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-input:focus {
+      border-color: #1890ff;
+      box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.15);
+    }
+    .search-input::placeholder {
+      color: #999;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    th {
+      background: #fafafa;
+      font-weight: 600;
+      color: #333;
+      font-size: 14px;
+    }
+    td {
+      font-size: 14px;
+      color: #333;
+    }
+    tr:hover td {
+      background: #fafafa;
+    }
+    .logo-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-img {
+      width: 48px;
+      height: 48px;
+      object-fit: contain;
+      background: #f5f5f5;
+      border-radius: 6px;
+    }
+    .no-result {
+      text-align: center;
+      padding: 40px 20px;
+      color: #999;
+      font-size: 14px;
+    }
+    .count {
+      margin-top: 12px;
+      font-size: 13px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>电视台标 Logo 展示</h1>
+    <div class="search-wrap">
+      <label for="search">按名称搜索</label>
+      <input type="text" id="search" class="search-input" placeholder="输入 Logo 名称进行搜索..." autocomplete="off" />
+    </div>
+    <div id="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>频道名</th>
+            <th>频道 Logo</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <!-- 由 JS 填充 -->
+        </tbody>
+      </table>
+    </div>
+    <div id="no-result" class="no-result" style="display: none;">未找到匹配的 Logo</div>
+    <div id="count" class="count"></div>
+  </div>
+
+  <script>
+    (function () {
+      var logos = [];
+
+      var tbody = document.getElementById('tbody');
+      var noResult = document.getElementById('no-result');
+      var tableWrap = document.getElementById('table-wrap');
+      var countEl = document.getElementById('count');
+      var searchInput = document.getElementById('search');
+
+      function renderRows(items) {
+        tbody.innerHTML = '';
+        if (items.length === 0) {
+          tableWrap.style.display = 'none';
+          noResult.style.display = 'block';
+          countEl.textContent = '';
+          return;
+        }
+        tableWrap.style.display = 'block';
+        noResult.style.display = 'none';
+        countEl.textContent = '共 ' + items.length + ' 个 Logo';
+
+        items.forEach(function (item) {
+          var tr = document.createElement('tr');
+          tr.innerHTML =
+            '<td>' + escapeHtml(item.name) + '</td>' +
+            '<td><div class="logo-cell">' +
+            '<img class="logo-img" src="' + escapeHtml(item.url) + '" alt="' + escapeHtml(item.name) + '" loading="lazy" />' +
+            '</div></td>';
+          tbody.appendChild(tr);
+        });
+      }
+
+      function escapeHtml(s) {
+        var div = document.createElement('div');
+        div.textContent = s;
+        return div.innerHTML;
+      }
+
+      function filterLogos(keyword) {
+        var k = (keyword || '').trim().toLowerCase();
+        if (!k) return logos.slice();
+        return logos.filter(function (item) {
+          return item.name.toLowerCase().indexOf(k) !== -1;
+        });
+      }
+
+      function onSearch() {
+        var keyword = searchInput.value;
+        var filtered = filterLogos(keyword);
+        renderRows(filtered);
+      }
+
+      searchInput.addEventListener('input', onSearch);
+      searchInput.addEventListener('keyup', onSearch);
+
+      // 从 logo.json 加载数据
+      fetch('./logo.json')
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          logos = Array.isArray(data) ? data : [];
+          onSearch();
+        })
+        .catch(function (err) {
+          console.error('加载 logo.json 失败:', err);
+          noResult.style.display = 'block';
+          noResult.textContent = '加载 Logo 列表失败，请检查 logo.json 是否存在。';
+          tableWrap.style.display = 'none';
+        });
+    })();
+  </script>
+</body>
+</html>
