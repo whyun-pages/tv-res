@@ -120,7 +120,7 @@
     .search-wrap {
       margin-bottom: 20px;
     }
-    .search-wrap label {
+    .search-wrap > label {
       display: block;
       margin-bottom: 6px;
       font-size: 14px;
@@ -143,6 +143,26 @@
     }
     .search-input::placeholder {
       color: var(--text-muted);
+    }
+    .search-options {
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .mode-switch {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: var(--text-label);
+      user-select: none;
+    }
+    .search-error {
+      font-size: 13px;
+      color: #d4380d;
+      min-height: 18px;
     }
     table {
       width: 100%;
@@ -205,6 +225,13 @@
     <div class="search-wrap">
       <label for="search">按名称搜索</label>
       <input type="text" id="search" class="search-input" placeholder="输入 Logo 名称进行搜索..." autocomplete="off" />
+      <div class="search-options">
+        <label class="mode-switch">
+          <input type="checkbox" id="regex-mode" />
+          <span>正则搜索</span>
+        </label>
+        <div id="search-error" class="search-error" aria-live="polite"></div>
+      </div>
     </div>
     <div id="table-wrap">
       <table>
@@ -245,6 +272,8 @@
       var tableWrap = document.getElementById('table-wrap');
       var countEl = document.getElementById('count');
       var searchInput = document.getElementById('search');
+      var regexModeInput = document.getElementById('regex-mode');
+      var searchError = document.getElementById('search-error');
 
       function renderRows(items) {
         tbody.innerHTML = '';
@@ -275,22 +304,46 @@
         return div.innerHTML;
       }
 
-      function filterLogos(keyword) {
+      function setSearchError(message) {
+        searchError.textContent = message || '';
+        noResult.textContent = message ? '请输入有效的正则表达式' : '未找到匹配的 Logo';
+      }
+
+      function filterLogos(keyword, useRegex) {
         var k = (keyword || '').trim().toLowerCase();
-        if (!k) return logos.slice();
-        return logos.filter(function (item) {
-          return item.name.toLowerCase().indexOf(k) !== -1;
-        });
+        if (!k) {
+          setSearchError('');
+          return logos.slice();
+        }
+
+        if (!useRegex) {
+          setSearchError('');
+          return logos.filter(function (item) {
+            return item.name.toLowerCase().indexOf(k) !== -1;
+          });
+        }
+
+        try {
+          var pattern = new RegExp(keyword.trim(), 'i');
+          setSearchError('');
+          return logos.filter(function (item) {
+            return pattern.test(item.name);
+          });
+        } catch (err) {
+          setSearchError('正则表达式无效：' + err.message);
+          return [];
+        }
       }
 
       function onSearch() {
         var keyword = searchInput.value;
-        var filtered = filterLogos(keyword);
+        var filtered = filterLogos(keyword, regexModeInput.checked);
         renderRows(filtered);
       }
 
       searchInput.addEventListener('input', onSearch);
       searchInput.addEventListener('keyup', onSearch);
+      regexModeInput.addEventListener('change', onSearch);
 
       // 从 logo.json 加载数据
       fetch('./logo.json')
